@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0a0a0a">
+    <link rel="manifest" href="data:application/json,{}">
+    <title>TALKfriends</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #141414;
+            --surface2: #1a1a1a;
+            --red: #e53935;
+            --red-dark: #b71c1c;
+            --red-locked: #5c3a3a;
+            --red-grey: #6b4a4a;
+            --text: #e0e0e0;
+            --gold: #c9a84c;
+            --border: #2a2a2a;
+            --install-yellow: #f5c518;
+            --font-title: 'Impact', 'Arial Black', 'Franklin Gothic Heavy', sans-serif;
+            --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: var(--font-body);
+            background: #000;
+            color: var(--text);
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            touch-action: manipulation;
+        }
+        .app-container {
+            width: 100%;
+            max-width: 430px;
+            height: 100vh;
+            height: 100dvh;
+            background: var(--bg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .install-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(245, 197, 24, 0.94);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+            gap: 20px;
+            padding: 30px;
+            text-align: center;
+        }
+        .install-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .install-overlay .install-icon {
+            font-size: 70px;
+            animation: bounce 1.2s ease infinite;
+        }
+        @keyframes bounce {
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+        .install-overlay .install-text {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a1a1a;
+            letter-spacing: 1px;
+            max-width: 300px;
+            line-height: 1.4;
+        }
+        .install-overlay .install-buttons {
+            display: flex;
+            gap: 16px;
+            margin-top: 8px;
+        }
+        .install-btn {
+            padding: 14px 30px;
+            border-radius: 30px;
+            border: none;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 1px;
+            font-family: var(--font-body);
+        }
+        .install-btn.yes {
+            background: #1a1a1a;
+            color: #f5c518;
+        }
+        .install-btn.no {
+            background: transparent;
+            color: #1a1a1a;
+            border: 2px solid #1a1a1a;
+        }
+
+        .page {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease;
+            padding: 16px 16px 24px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .page.active {
+            transform: translateX(0);
+            opacity: 1;
+            z-index: 10;
+        }
+        .page.hidden-right {
+            transform: translateX(105%);
+            opacity: 0;
+            pointer-events: none;
+        }
+        .page.hidden-left {
+            transform: translateX(-105%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .btn-back {
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 60;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ccc;
+            font-size: 16px;
+            transition: all var(--transition);
+        }
+        .btn-back:active {
+            transform: scale(0.85);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .lang-flags {
+            position: fixed;
+            top: 14px;
+            right: 16px;
+            display: flex;
+            gap: 8px;
+            z-index: 60;
+        }
+        .lang-flag {
+            width: 32px;
+            height: 22px;
+            border-radius: 4px;
+            cursor: pointer;
+            opacity: 0.5;
+            border: 2px solid transparent;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition);
+        }
+        .lang-flag.active-lang {
+            opacity: 1;
+            border-color: var(--gold);
+            box-shadow: 0 0 12px rgba(201, 168, 76, 0.4);
+        }
+
+        .slideshow {
+            position: relative;
+            width: 100%;
+            height: 45%;
+            min-height: 280px;
+            border-radius: 18px;
+            overflow: hidden;
+            margin-bottom: 16px;
+            background: #111;
+            flex-shrink: 0;
+        }
+        .slideshow img {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 1.4s ease;
+        }
+        .slideshow img.active {
+            opacity: 1;
+        }
+        .slide-dots {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+            z-index: 5;
+        }
+        .slide-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            transition: all 0.4s;
+            cursor: pointer;
+        }
+        .slide-dot.active-dot {
+            background: #fff;
+            width: 20px;
+            border-radius: 4px;
+        }
+        .slide-fade {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 55%;
+            background: linear-gradient(transparent, rgba(10, 10, 10, 0.8) 50%, #0a0a0a);
+            pointer-events: none;
+        }
+
+        .brand {
+            text-align: center;
+            margin: -24px 0 16px;
+            z-index: 5;
+            position: relative;
+            font-family: var(--font-title);
+            font-size: 48px;
+            letter-spacing: 3px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+        }
+        .brand .talk {
+            font-weight: 900;
+            color: #fff;
+        }
+        .brand .friends {
+            font-weight: 400;
+            color: #bbb;
+        }
+
+        .greeting-box {
+            text-align: center;
+            height: 44px;
+            margin-bottom: 20px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .greeting-word {
+            position: absolute;
+            opacity: 0;
+            transition: opacity 0.7s ease;
+            font-style: italic;
+            font-size: 22px;
+            font-weight: 400;
+            letter-spacing: 1px;
+            text-align: center;
+            width: 100%;
+        }
+        .greeting-word.show {
+            opacity: 1;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 8px;
+            border: 1.5px solid var(--border);
+            border-radius: 14px;
+            background: var(--surface);
+            color: #ccc;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            text-align: center;
+            font-family: var(--font-body);
+            transition: all var(--transition);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn:active {
+            transform: scale(0.96);
+            background: #222;
+        }
+        .btn.red {
+            background: var(--red);
+            border-color: var(--red);
+            color: #fff;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        .btn.install-special {
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 400;
+            letter-spacing: 2px;
+            padding: 14px;
+            text-align: center;
+            cursor: pointer;
+            text-shadow: 0 0 12px rgba(255, 255, 255, 0.7), 0 0 25px rgba(255, 255, 255, 0.4), 0 0 40px rgba(255, 255, 255, 0.2);
+            animation: glowPulse 2.5s ease-in-out infinite;
+        }
+        @keyframes glowPulse {
+            0%,
+            100% {
+                text-shadow: 0 0 12px rgba(255, 255, 255, 0.7), 0 0 25px rgba(255, 255, 255, 0.4), 0 0 40px rgba(255, 255, 255, 0.2);
+            }
+            50% {
+                text-shadow: 0 0 22px rgba(255, 255, 255, 1), 0 0 45px rgba(255, 255, 255, 0.7), 0 0 65px rgba(255, 255, 255, 0.5);
+            }
+        }
+
+        .mode-bar {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 10px;
+            color: #555;
+            letter-spacing: 1px;
+            cursor: pointer;
+        }
+        .mode-dot {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: pulse 2s infinite;
+        }
+        .mode-dot.online {
+            background: #4caf50;
+        }
+        .mode-dot.offline {
+            background: #ff9800;
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 currentColor;
+            }
+            50% {
+                box-shadow: 0 0 0 8px transparent;
+            }
+        }
+
+        .field {
+            margin-bottom: 14px;
+        }
+        .field label {
+            display: block;
+            font-size: 10px;
+            color: #888;
+            margin-bottom: 4px;
+            letter-spacing: 1px;
+        }
+        .field input {
+            width: 100%;
+            padding: 13px 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 15px;
+            font-family: var(--font-body);
+        }
+        .field input:focus {
+            outline: none;
+            border-color: var(--gold);
+        }
+        .freq-box {
+            background: #0a0a0a;
+            border: 2px dashed var(--gold);
+            border-radius: 12px;
+            padding: 18px;
+            text-align: center;
+            font-size: 28px;
+            font-family: 'Courier New', monospace;
+            color: var(--gold);
+            letter-spacing: 3px;
+            margin: 12px 0;
+        }
+
+        .freq-bar {
+            text-align: center;
+            padding: 8px 0 12px;
+            border-bottom: 1px solid var(--border);
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: var(--gold);
+            letter-spacing: 2px;
+        }
+        .msg-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .bubble {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 16px;
+            font-size: 13px;
+            animation: popIn 0.25s ease;
+            position: relative;
+        }
+        @keyframes popIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .bubble.other {
+            background: #1a1a1a;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+            border: 1px solid #2a2a2a;
+        }
+        .bubble.me {
+            background: #1a1a2e;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+            border: 1px solid #2a2a4e;
+        }
+        .bubble .who {
+            font-size: 9px;
+            color: var(--gold);
+            margin-bottom: 3px;
+            font-weight: 600;
+        }
+        .bubble .txt {
+            color: #ddd;
+            line-height: 1.4;
+        }
+        .bubble .countdown {
+            font-size: 9px;
+            color: #777;
+            margin-top: 2px;
+        }
+        .bubble.voice {
+            background: #1a0f25;
+            border: 1px solid #3a2a55;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .waveform {
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 24px;
+        }
+        .wave-bar {
+            width: 3px;
+            background: #9c27b0;
+            border-radius: 2px;
+            animation: waveAnim 0.7s ease-in-out infinite;
+        }
+        @keyframes waveAnim {
+            0%,
+            100% {
+                height: 6px;
+            }
+            50% {
+                height: 18px;
+            }
+        }
+
+        .ptt-zone {
+            text-align: center;
+            padding: 12px 0 8px;
+            position: sticky;
+            bottom: 0;
+            background: linear-gradient(transparent, var(--bg) 50%);
+            z-index: 20;
+        }
+        .ptt-btn {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: var(--red);
+            border: 4px solid #ff5252;
+            cursor: pointer;
+            color: #fff;
+            font-weight: 700;
+            font-size: 11px;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            transition: all 0.1s;
+            box-shadow: 0 6px 25px rgba(229, 57, 53, 0.5);
+            position: relative;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        .ptt-btn:active,
+        .ptt-btn.pressed {
+            background: #b71c1c;
+            transform: scale(0.88);
+        }
+        .ptt-btn.locked {
+            background: var(--red-locked);
+            border-color: #6b4a4a;
+            cursor: not-allowed;
+            box-shadow: 0 4px 12px rgba(92, 58, 58, 0.3);
+            color: #999;
+        }
+        .ptt-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            animation: ringPulse 1.8s infinite;
+        }
+        @keyframes ringPulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(1.35);
+                opacity: 0;
+            }
+        }
+
+        .edit-btn {
+            position: absolute;
+            bottom: 110px;
+            right: 20px;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            z-index: 25;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .edit-btn:active {
+            transform: scale(0.85);
+        }
+
+        .text-row {
+            display: flex;
+            gap: 6px;
+            padding: 6px 0;
+        }
+        .text-row input {
+            flex: 1;
+            padding: 10px 12px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            color: #fff;
+            font-size: 13px;
+            font-family: var(--font-body);
+        }
+        .text-row button {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: #ccc;
+            cursor: pointer;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a1a;
+            border: 1px solid var(--border);
+            padding: 10px 18px;
+            border-radius: 20px;
+            font-size: 11px;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        .toast.show {
+            opacity: 1;
+        }
+
+        .disconnect-btn {
+            position: fixed;
+            top: 54px;
+            right: 16px;
+            font-size: 10px;
+            color: #e53935;
+            padding: 5px 10px;
+            border: 1px solid rgba(229, 57, 53, 0.3);
+            border-radius: 10px;
+            background: rgba(229, 57, 53, 0.06);
+            cursor: pointer;
+            z-index: 55;
+        }
+
+        .live-indicator {
+            position: fixed;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(229, 57, 53, 0.9);
+            color: #fff;
+            font-size: 11px;
+            padding: 4px 14px;
+            border-radius: 12px;
+            z-index: 55;
+            display: none;
+            animation: blink 0.7s infinite;
+        }
+        .live-indicator.on {
+            display: block;
+        }
+        @keyframes blink {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="install-overlay" id="installOverlay">
+        <div class="install-icon">📻</div>
+        <div class="install-text" id="installText">Voulez-vous télécharger l'application sur votre mobile ?</div>
+        <div class="install-buttons">
+            <button class="install-btn yes" id="installYes" onclick="installApp()">✅ Oui</button>
+            <button class="install-btn no" id="installNo" onclick="dismissInstall()">❌ Non</button>
+        </div>
+    </div>
+
+    <div class="app-container" id="app">
+
+        <div class="page active" id="homePage">
+            <div class="lang-flags">
+                <span class="lang-flag active-lang" data-lang="fr" onclick="setLang('fr')" title="Français">🇫🇷</span>
+                <span class="lang-flag" data-lang="en" onclick="setLang('en')" title="English">🇬🇧</span>
+            </div>
+
+            <div class="slideshow" id="slideshow">
+                <img src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=600&q=80" alt="Chantier" class="active">
+                <img src="https://images.unsplash.com/photo-1586339949916-3e515fa6d1dc?w=600&q=80" alt="Talkie-walkie">
+                <img src="https://images.unsplash.com/photo-1577563908411-5077b6dc7624?w=600&q=80" alt="Communication">
+                <img src="https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=600&q=80" alt="Discussion">
+                <img src="https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=600&q=80" alt="Télécom">
+                <img src="https://images.unsplash.com/photo-1614032686061-f7123a1759f5?w=600&q=80" alt="Antennes">
+                <img src="https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=600&q=80" alt="Ouvriers">
+                <img src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&q=80" alt="Réseau">
+                <div class="slide-dots" id="slideDots"></div>
+                <div class="slide-fade"></div>
+            </div>
+
+            <div class="brand"><span class="talk">TALK</span><span class="friends">friends</span></div>
+
+            <div class="greeting-box" id="greetingBox"></div>
+
+            <button class="btn red" id="btnCreate" onclick="goTo('createPage')">CRÉER UNE FRÉQUENCE</button>
+            <button class="btn" id="btnJoin" onclick="goTo('joinPage')">J'AI UNE FRÉQUENCE</button>
+            <button class="btn install-special" id="btnInstall" onclick="triggerInstall()">INSTALLER L'APPLI SUR MON TÉLÉPHONE</button>
+
+            <div class="mode-bar" onclick="toggleMode()">
+                <span class="mode-dot online" id="modeDot"></span>
+                <span id="modeLabel">Mode Internet</span>
+            </div>
+        </div>
+
+        <div class="page hidden-right" id="createPage">
+            <div class="btn-back" onclick="goTo('homePage')">←</div>
+            <div class="lang-flags">
+                <span class="lang-flag active-lang" data-lang="fr" onclick="setLang('fr')">🇫🇷</span>
+                <span class="lang-flag" data-lang="en" onclick="setLang('en')">🇬🇧</span>
+            </div>
+
+            <h2 style="margin-top:44px;margin-bottom:16px;font-weight:300;" id="createTitle">Créer une fréquence</h2>
+
+            <div class="field">
+                <label id="lblCompany">Nom de l'Entreprise</label>
+                <input type="text" id="companyInput" placeholder="Ex: BTP Pro">
+            </div>
+
+            <div class="freq-box" id="freqBox">TF-_.____</div>
+
+            <button class="btn red" id="btnGen" onclick="genFreq()">⚡ GÉNÉRER UNE FRÉQUENCE</button>
+            <button class="btn" id="btnValidate" onclick="createAndJoin()">✅ VALIDER ET REJOINDRE</button>
+        </div>
+
+        <div class="page hidden-right" id="joinPage">
+            <div class="btn-back" onclick="goTo('homePage')">←</div>
+            <div class="lang-flags">
+                <span class="lang-flag active-lang" data-lang="fr" onclick="setLang('fr')">🇫🇷</span>
+                <span class="lang-flag" data-lang="en" onclick="setLang('en')">🇬🇧</span>
+            </div>
+
+            <h2 style="margin-top:44px;margin-bottom:16px;font-weight:300;" id="joinTitle">Rejoindre une fréquence</h2>
+
+            <div class="field">
+                <label id="lblName">Nom Complet</label>
+                <input type="text" id="nameInput" placeholder="Ex: Jean Dupont">
+            </div>
+            <div class="field">
+                <label id="lblFreq">Fréquence</label>
+                <input type="text" id="freqInput" placeholder="Ex: TF-3.1845">
+            </div>
+
+            <button class="btn red" id="btnJoinFreq" onclick="joinFreq()">🔗 REJOINDRE</button>
+        </div>
+
+        <div class="page hidden-right" id="msgPage">
+            <div class="btn-back" onclick="disconnect()">←</div>
+            <div class="disconnect-btn" id="btnDisconnect" onclick="disconnect()">✕ Déco</div>
+            <div class="live-indicator" id="liveIndicator">🔴 LIVE</div>
+
+            <div class="freq-bar" id="freqBar">FRÉQUENCE : --</div>
+
+            <div class="msg-list" id="msgList">
+                <div style="text-align:center;color:#444;padding:40px;font-size:12px;" id="emptyMsg">
+                    Aucun message.<br>Appuyez sur le bouton rouge pour parler.
+                </div>
+            </div>
+
+            <div class="edit-btn" onclick="toggleText()">✏️</div>
+
+            <div class="text-row" id="textRow" style="display:none;">
+                <input type="text" id="textInput" placeholder="Message (3 min)..." maxlength="200">
+                <button onclick="sendText()">➤</button>
+            </div>
+
+            <div class="ptt-zone">
+                <div class="ptt-btn" id="pttBtn">
+                    <div class="ptt-ring"></div>
+                    PTT
+                </div>
+            </div>
+
+            <div class="toast" id="toast"></div>
+        </div>
+    </div>
+
+    <script>
+        const LANG = {
+            fr: {
+                installText: 'Voulez-vous télécharger l\'application sur votre mobile ?',
+                installYes: '✅ Oui',
+                installNo: '❌ Non',
+                createFreq: 'CRÉER UNE FRÉQUENCE',
+                joinFreq: 'J\'AI UNE FRÉQUENCE',
+                installBtn: 'INSTALLER L\'APPLI SUR MON TÉLÉPHONE',
+                modeInternet: 'Mode Internet',
+                modeLocal: 'Mode Local (WiFi)',
+                createTitle: 'Créer une fréquence',
+                lblCompany: 'Nom de l\'Entreprise',
+                btnGen: '⚡ GÉNÉRER UNE FRÉQUENCE',
+                btnValidate: '✅ VALIDER ET REJOINDRE',
+                joinTitle: 'Rejoindre une fréquence',
+                lblName: 'Nom Complet',
+                lblFreq: 'Fréquence',
+                btnJoinFreq: '🔗 REJOINDRE',
+                disconnect: '✕ Déco',
+                emptyMsg: 'Aucun message.<br>Appuyez sur le bouton rouge pour parler.',
+                toastFreqGen: '⚡ Fréquence générée : ',
+                toastEnterCompany: '⚠️ Entrez le nom de l\'entreprise',
+                toastGenFirst: '⚠️ Générez d\'abord une fréquence',
+                toastEnterName: '⚠️ Entrez votre nom',
+                toastEnterFreq: '⚠️ Entrez la fréquence',
+                toastInvalidFreq: '⚠️ Format invalide (TF-X.XXXX)',
+                toastJoined: '✅ Salon rejoint : ',
+                toastDisconnected: '👋 Déconnecté',
+                toastTextSent: '💬 Message envoyé (3 min)',
+                toastChannelBusy: '🔴 Canal occupé...',
+                toastSpeaking: '🎤 Parlez...',
+                toastRecording: '🎤 Enregistrement (8s max)...',
+                toastMicError: '⚠️ Micro non disponible',
+                shareTitle: 'TALKfriends',
+                shareText: 'Talkie-walkie nouvelle génération !',
+                greetings: ['Salut', 'Hello', 'Привет', 'Hola', '你好', 'Báwo', 'مرحباً', 'こんにちは', 'Merhaba', '안녕하세요',
+                    'Ciao', 'नमस्ते'
+                ],
+                greetingColors: ['#e0e0e0', '#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff922b', '#20c997', '#f06595',
+                    '#748ffc', '#ff8787', '#63e6be', '#ffa94d'
+                ],
+            },
+            en: {
+                installText: 'Do you want to install the app on your mobile?',
+                installYes: '✅ Yes',
+                installNo: '❌ No',
+                createFreq: 'CREATE A FREQUENCY',
+                joinFreq: 'I HAVE A FREQUENCY',
+                installBtn: 'INSTALL THE APP ON MY PHONE',
+                modeInternet: 'Internet Mode',
+                modeLocal: 'Local Mode (WiFi)',
+                createTitle: 'Create a frequency',
+                lblCompany: 'Company Name',
+                btnGen: '⚡ GENERATE A FREQUENCY',
+                btnValidate: '✅ VALIDATE AND JOIN',
+                joinTitle: 'Join a frequency',
+                lblName: 'Full Name',
+                lblFreq: 'Frequency',
+                btnJoinFreq: '🔗 JOIN',
+                disconnect: '✕ Leave',
+                emptyMsg: 'No messages.<br>Press the red button to talk.',
+                toastFreqGen: '⚡ Frequency generated: ',
+                toastEnterCompany: '⚠️ Enter the company name',
+                toastGenFirst: '⚠️ Generate a frequency first',
+                toastEnterName: '⚠️ Enter your name',
+                toastEnterFreq: '⚠️ Enter the frequency',
+                toastInvalidFreq: '⚠️ Invalid format (TF-X.XXXX)',
+                toastJoined: '✅ Room joined: ',
+                toastDisconnected: '👋 Disconnected',
+                toastTextSent: '💬 Message sent (3 min)',
+                toastChannelBusy: '🔴 Channel busy...',
+                toastSpeaking: '🎤 Speaking...',
+                toastRecording: '🎤 Recording (8s max)...',
+                toastMicError: '⚠️ Microphone unavailable',
+                shareTitle: 'TALKfriends',
+                shareText: 'Next-gen walkie-talkie!',
+                greetings: ['Hello', 'Salut', 'Привет', 'Hola', '你好', 'Hello', 'مرحباً', 'こんにちは', 'Merhaba',
+                    '안녕하세요', 'Ciao', 'नमस्ते'
+                ],
+                greetingColors: ['#e0e0e0', '#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff922b', '#20c997', '#f06595',
+                    '#748ffc', '#ff8787', '#63e6be', '#ffa94d'
+                ],
+            }
+        };
+
+        const STATE = {
+            page: 'homePage',
+            lang: 'fr',
+            freq: null,
+            userName: '',
+            internetMode: true,
+            isPTT: false,
+            channelBusy: false,
+            generatedFreq: null,
+            messages: [],
+            ws: null,
+            mediaStream: null,
+            mediaRecorder: null,
+            audioChunks: [],
+            timers: {},
+            slideIndex: 0,
+            greetingIndex: 0,
+            deferredPrompt: null,
+        };
+
+        const t = () => LANG[STATE.lang];
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            STATE.deferredPrompt = e;
+            setTimeout(() => {
+                document.getElementById('installOverlay').classList.add('show');
+            }, 3000);
+        });
+
+        function installApp() {
+            document.getElementById('installOverlay').classList.remove('show');
+            if (STATE.deferredPrompt) {
+                STATE.deferredPrompt.prompt();
+                STATE.deferredPrompt.userChoice.then((result) => {
+                    STATE.deferredPrompt = null;
+                });
+            }
+        }
+
+        function dismissInstall() {
+            document.getElementById('installOverlay').classList.remove('show');
+        }
+
+        function triggerInstall() {
+            playClickSound();
+            if (STATE.deferredPrompt) {
+                STATE.deferredPrompt.prompt();
+                STATE.deferredPrompt.userChoice.then((result) => {
+                    STATE.deferredPrompt = null;
+                });
+            } else {
+                document.getElementById('installOverlay').classList.add('show');
+            }
+        }
+
+        function updateInstallOverlay() {
+            document.getElementById('installText').textContent = t().installText;
+            document.getElementById('installYes').textContent = t().installYes;
+            document.getElementById('installNo').textContent = t().installNo;
+        }
+
+        const WS_URL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
+
+        function connectWS() {
+            if (STATE.ws && STATE.ws.readyState === WebSocket.OPEN) return;
+            try {
+                STATE.ws = new WebSocket(WS_URL);
+                STATE.ws.onopen = () => {
+                    if (STATE.freq) {
+                        sendWS({ type: 'join', frequency: STATE.freq, userName: STATE.userName });
+                    }
+                };
+                STATE.ws.onmessage = (e) => {
+                    try { handleWSMessage(JSON.parse(e.data)); } catch (err) {}
+                };
+                STATE.ws.onclose = () => {
+                    if (STATE.freq) setTimeout(connectWS, 2000);
+                };
+            } catch (e) {}
+        }
+
+        function sendWS(data) {
+            if (STATE.ws && STATE.ws.readyState === WebSocket.OPEN) STATE.ws.send(JSON.stringify(data));
+        }
+
+        function handleWSMessage(msg) {
+            switch (msg.type) {
+                case 'user-joined':
+                    toast(`👤 ${msg.userName} ${STATE.lang === 'fr' ? 'a rejoint' : 'joined'}`);
+                    break;
+                case 'user-left':
+                    toast(`👋 ${msg.userName} ${STATE.lang === 'fr' ? 'est parti' : 'left'}`);
+                    break;
+                case 'text-message':
+                    if (msg.userName !== STATE.userName) {
+                        addMessage({ id: msg.messageId, type: 'text', sender: msg.userName, text: msg.text,
+                            expiresAt: msg.expiresAt });
+                        playBeep(false);
+                    }
+                    break;
+                case 'voice-message':
+                    if (msg.userName !== STATE.userName) {
+                        addMessage({ id: msg.messageId, type: 'voice', sender: msg.userName, duration: msg.duration,
+                            expiresAt: msg.expiresAt, audioData: msg.audioData });
+                        if (msg.audioData) playAudioB64(msg.audioData);
+                        playBeep(false);
+                    }
+                    break;
+                case 'ptt-start':
+                    if (msg.userName !== STATE.userName) {
+                        STATE.channelBusy = true;
+                        document.getElementById('pttBtn').classList.add('locked');
+                        document.getElementById('liveIndicator').classList.add('on');
+                        toast(`🎤 ${msg.userName} ${STATE.lang === 'fr' ? 'parle...' : 'speaking...'}`);
+                    }
+                    break;
+                case 'ptt-end':
+                    STATE.channelBusy = false;
+                    document.getElementById('pttBtn').classList.remove('locked');
+                    document.getElementById('liveIndicator').classList.remove('on');
+                    break;
+                case 'join-confirmed':
+                    toast(`${t().toastJoined}${msg.frequency}`);
+                    break;
+            }
+        }
+
+        function playClickSound() {
+            try {
+                const ctx = new(window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1000, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.03);
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.04);
+                setTimeout(() => {
+                    const osc2 = ctx.createOscillator();
+                    const gain2 = ctx.createGain();
+                    osc2.type = 'sine';
+                    osc2.frequency.setValueAtTime(1200, ctx.currentTime);
+                    osc2.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.03);
+                    gain2.gain.setValueAtTime(0.08, ctx.currentTime);
+                    gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+                    osc2.connect(gain2);
+                    gain2.connect(ctx.destination);
+                    osc2.start(ctx.currentTime);
+                    osc2.stop(ctx.currentTime + 0.04);
+                }, 20);
+            } catch (e) {}
+        }
+
+        function playBeep(isStart) {
+            try {
+                const ctx = new(window.AudioContext || window.webkitAudioContext)();
+                const o = ctx.createOscillator();
+                const g = ctx.createGain();
+                o.type = 'sawtooth';
+                o.frequency.setValueAtTime(isStart ? 800 : 400, ctx.currentTime);
+                o.frequency.linearRampToValueAtTime(isStart ? 400 : 800, ctx.currentTime + 0.12);
+                g.gain.setValueAtTime(0.12, ctx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+                o.connect(g);
+                g.connect(ctx.destination);
+                o.start();
+                o.stop(ctx.currentTime + 0.15);
+            } catch (e) {}
+        }
+
+        function playAudioB64(b64) {
+            try { const a = new Audio(b64);
+                a.play().catch(() => {}); } catch (e) {}
+        }
+
+        function recordAudio(ms) {
+            return new Promise((resolve, reject) => {
+                const done = (blob) => {
+                    const r = new FileReader();
+                    r.onloadend = () => resolve(r.result);
+                    r.readAsDataURL(blob);
+                };
+                if (!STATE.mediaRecorder) {
+                    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                        STATE.mediaStream = stream;
+                        const rec = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+                        STATE.mediaRecorder = rec;
+                        STATE.audioChunks = [];
+                        rec.ondataavailable = e => STATE.audioChunks.push(e.data);
+                        rec.onstop = () => { const blob = new Blob(STATE.audioChunks, { type: 'audio/webm' });
+                            STATE.audioChunks = [];
+                            done(blob); };
+                        rec.start();
+                        setTimeout(() => { if (rec.state === 'recording') rec.stop(); }, ms);
+                    }).catch(reject);
+                } else {
+                    STATE.audioChunks = [];
+                    STATE.mediaRecorder.start();
+                    setTimeout(() => { if (STATE.mediaRecorder.state === 'recording') STATE.mediaRecorder
+                        .stop(); }, ms);
+                    STATE.mediaRecorder.onstop = () => { const blob = new Blob(STATE.audioChunks, { type: 'audio/webm' });
+                        STATE.audioChunks = [];
+                        done(blob); };
+                }
+            });
+        }
+
+        function goTo(pageId) {
+            const pages = ['homePage', 'createPage', 'joinPage', 'msgPage'];
+            const cur = document.getElementById(STATE.page);
+            const tgt = document.getElementById(pageId);
+            if (STATE.page === pageId) return;
+            playClickSound();
+            cur.classList.remove('active');
+            const back = pages.indexOf(pageId) < pages.indexOf(STATE.page);
+            cur.classList.add(back ? 'hidden-right' : 'hidden-left');
+            tgt.classList.remove('hidden-left', 'hidden-right');
+            tgt.classList.add(back ? 'hidden-left' : 'hidden-right');
+            void tgt.offsetWidth;
+            tgt.classList.remove('hidden-left', 'hidden-right');
+            tgt.classList.add('active');
+            STATE.page = pageId;
+            document.getElementById('app').scrollTop = 0;
+            updateAllTexts();
+        }
+
+        let toastTimer;
+
+        function toast(msg) {
+            const el = document.getElementById('toast');
+            el.textContent = msg;
+            el.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
+        }
+
+        function setLang(lang) {
+            STATE.lang = lang;
+            document.querySelectorAll('.lang-flag').forEach(f => f.classList.remove('active-lang'));
+            document.querySelectorAll(`.lang-flag[data-lang="${lang}"]`).forEach(f => f.classList.add('active-lang'));
+            playClickSound();
+            updateAllTexts();
+            updateGreetings();
+            updateInstallOverlay();
+        }
+
+        function updateAllTexts() {
+            const tr = t();
+            document.getElementById('btnCreate').textContent = tr.createFreq;
+            document.getElementById('btnJoin').textContent = tr.joinFreq;
+            document.getElementById('btnInstall').textContent = tr.installBtn;
+            document.getElementById('modeLabel').textContent = STATE.internetMode ? tr.modeInternet : tr.modeLocal;
+            document.getElementById('createTitle').textContent = tr.createTitle;
+            document.getElementById('lblCompany').textContent = tr.lblCompany;
+            document.getElementById('btnGen').textContent = tr.btnGen;
+            document.getElementById('btnValidate').textContent = tr.btnValidate;
+            document.getElementById('joinTitle').textContent = tr.joinTitle;
+            document.getElementById('lblName').textContent = tr.lblName;
+            document.getElementById('lblFreq').textContent = tr.lblFreq;
+            document.getElementById('btnJoinFreq').textContent = tr.btnJoinFreq;
+            document.getElementById('btnDisconnect').textContent = tr.disconnect;
+            const empty = document.getElementById('emptyMsg');
+            if (empty) empty.innerHTML = tr.emptyMsg;
+            updateInstallOverlay();
+        }
+
+        function updateGreetings() {
+            const box = document.getElementById('greetingBox');
+            box.innerHTML = '';
+            const tr = t();
+            tr.greetings.forEach((w, i) => {
+                const span = document.createElement('span');
+                span.className = 'greeting-word' + (i === 0 ? ' show' : '');
+                span.textContent = w;
+                span.style.color = tr.greetingColors[i % tr.greetingColors.length];
+                box.appendChild(span);
+            });
+            STATE.greetingIndex = 0;
+        }
+
+        function toggleMode() {
+            STATE.internetMode = !STATE.internetMode;
+            const tr = t();
+            document.getElementById('modeDot').className = 'mode-dot ' + (STATE.internetMode ? 'online' : 'offline');
+            document.getElementById('modeLabel').textContent = STATE.internetMode ? tr.modeInternet : tr.modeLocal;
+            toast(STATE.internetMode ? '🌐 ' + tr.modeInternet : '📶 ' + tr.modeLocal);
+            playClickSound();
+        }
+
+        function initSlideshow() {
+            const slides = document.querySelectorAll('#slideshow img');
+            const dotsC = document.getElementById('slideDots');
+            slides.forEach((_, i) => {
+                const d = document.createElement('span');
+                d.className = 'slide-dot' + (i === 0 ? ' active-dot' : '');
+                d.onclick = () => goSlide(i);
+                dotsC.appendChild(d);
+            });
+            setInterval(nextSlide, 3000);
+        }
+
+        function nextSlide() {
+            const slides = document.querySelectorAll('#slideshow img');
+            const dots = document.querySelectorAll('#slideDots .slide-dot');
+            slides[STATE.slideIndex].classList.remove('active');
+            dots[STATE.slideIndex].classList.remove('active-dot');
+            STATE.slideIndex = (STATE.slideIndex + 1) % slides.length;
+            slides[STATE.slideIndex].classList.add('active');
+            dots[STATE.slideIndex].classList.add('active-dot');
+        }
+
+        function goSlide(i) {
+            const slides = document.querySelectorAll('#slideshow img');
+            const dots = document.querySelectorAll('#slideDots .slide-dot');
+            slides[STATE.slideIndex].classList.remove('active');
+            dots[STATE.slideIndex].classList.remove('active-dot');
+            STATE.slideIndex = i;
+            slides[i].classList.add('active');
+            dots[i].classList.add('active-dot');
+        }
+
+        function genFreq() {
+            playClickSound();
+            const prefix = 'TF-';
+            const d = Math.floor(Math.random() * 9) + 1;
+            const s = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+            const freq = prefix + d + '.' + s;
+            STATE.generatedFreq = freq;
+            document.getElementById('freqBox').textContent = freq;
+            document.getElementById('freqBox').style.animation = 'none';
+            void document.getElementById('freqBox').offsetWidth;
+            document.getElementById('freqBox').style.animation = 'popIn 0.4s ease';
+            toast(t().toastFreqGen + freq);
+        }
+
+        function createAndJoin() {
+            playClickSound();
+            const company = document.getElementById('companyInput').value.trim();
+            const freq = STATE.generatedFreq;
+            if (!company) return toast(t().toastEnterCompany);
+            if (!freq || freq.includes('_')) return toast(t().toastGenFirst);
+            STATE.userName = company + ' (Admin)';
+            STATE.freq = freq;
+            enterRoom(freq);
+        }
+
+        function joinFreq() {
+            playClickSound();
+            const name = document.getElementById('nameInput').value.trim();
+            const freq = document.getElementById('freqInput').value.trim();
+            if (!name) return toast(t().toastEnterName);
+            if (!freq) return toast(t().toastEnterFreq);
+            if (!/^TF-[1-9]\.\d{4}$/.test(freq)) return toast(t().toastInvalidFreq);
+            STATE.userName = name;
+            STATE.freq = freq;
+            enterRoom(freq);
+        }
+
+        function enterRoom(freq) {
+            document.getElementById('freqBar').textContent = 'FRÉQUENCE : ' + freq;
+            document.getElementById('msgList').innerHTML =
+                `<div style="text-align:center;color:#444;padding:40px;font-size:12px;" id="emptyMsg">${t().emptyMsg}</div>`;
+            STATE.messages = [];
+            goTo('msgPage');
+            connectWS();
+            setTimeout(() => {
+                sendWS({ type: 'join', frequency: freq, userName: STATE.userName });
+                toast(t().toastJoined + freq);
+            }, 800);
+        }
+
+        function disconnect() {
+            playClickSound();
+            sendWS({ type: 'leave' });
+            if (STATE.ws) STATE.ws.close();
+            if (STATE.mediaStream) STATE.mediaStream.getTracks().forEach(t => t.stop());
+            STATE.freq = null;
+            STATE.userName = '';
+            STATE.channelBusy = false;
+            STATE.messages = [];
+            STATE.mediaRecorder = null;
+            STATE.mediaStream = null;
+            document.getElementById('pttBtn').classList.remove('locked', 'pressed');
+            document.getElementById('liveIndicator').classList.remove('on');
+            goTo('homePage');
+            toast(t().toastDisconnected);
+        }
+
+        function addMessage(msg) {
+            STATE.messages.push(msg);
+            const list = document.getElementById('msgList');
+            const empty = document.getElementById('emptyMsg');
+            if (empty) empty.remove();
+
+            const div = document.createElement('div');
+            div.className = 'bubble ' + (msg.sender === STATE.userName ? 'me' : 'other');
+            div.setAttribute('data-id', msg.id);
+            if (msg.type === 'voice') {
+                div.classList.add('voice');
+                div.innerHTML = `
+                    <div class="who">👤 ${msg.sender}</div>
+                    <div class="waveform">${Array(8).fill('<div class="wave-bar"></div>').join('')}</div>
+                    <span style="font-size:10px;color:#aaa;">🔊 ${msg.duration || '?'}s</span>
+                    <div class="countdown" data-expires="${msg.expiresAt}">⏳ 3:00</div>`;
+            } else {
+                div.innerHTML = `
+                    <div class="who">👤 ${msg.sender}</div>
+                    <div class="txt">${msg.text}</div>
+                    <div class="countdown" data-expires="${msg.expiresAt}">⏳ 3:00</div>`;
+            }
+            list.appendChild(div);
+            list.scrollTop = list.scrollHeight;
+            startCountdown(msg.id, msg.expiresAt, div);
+        }
+
+        function startCountdown(msgId, expiresAt, el) {
+            const timerEl = el.querySelector('.countdown');
+            if (!timerEl) return;
+            const upd = () => {
+                const r = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+                const m = Math.floor(r / 60);
+                const s = (r % 60).toString().padStart(2, '0');
+                timerEl.textContent = `⏳ ${m}:${s}`;
+                if (r <= 0) {
+                    el.style.opacity = '0';
+                    el.style.transform = 'scale(0.9)';
+                    el.style.transition = 'all 0.4s';
+                    setTimeout(() => {
+                        el.remove();
+                        STATE.messages = STATE.messages.filter(msg => msg.id !== msgId);
+                        if (document.getElementById('msgList').children.length === 0) {
+                            document.getElementById('msgList').innerHTML =
+                                `<div style="text-align:center;color:#444;padding:40px;font-size:12px;" id="emptyMsg">${t().emptyMsg}</div>`;
+                        }
+                    }, 400);
+                    clearInterval(STATE.timers[msgId]);
+                    delete STATE.timers[msgId];
+                }
+            };
+            upd();
+            STATE.timers[msgId] = setInterval(upd, 1000);
+        }
+
+        function sendText() {
+            playClickSound();
+            const input = document.getElementById('textInput');
+            const text = input.value.trim();
+            if (!text) return;
+            const msg = { id: Date.now().toString(), type: 'text', sender: STATE.userName, text, expiresAt: Date.now() + 3 *
+                    60 * 1000 };
+            addMessage(msg);
+            sendWS({ type: 'text-message', text, messageId: msg.id, expiresAt: msg.expiresAt });
+            input.value = '';
+            document.getElementById('textRow').style.display = 'none';
+            toast(t().toastTextSent);
+        }
+
+        function toggleText() {
+            playClickSound();
+            const row = document.getElementById('textRow');
+            row.style.display = row.style.display === 'none' ? 'flex' : 'none';
+            if (row.style.display === 'flex') document.getElementById('textInput').focus();
+        }
+
+        async function startPTT() {
+            if (STATE.channelBusy) return toast(t().toastChannelBusy);
+            if (!STATE.freq) return;
+            const btn = document.getElementById('pttBtn');
+            STATE.isPTT = true;
+            STATE.channelBusy = true;
+            btn.classList.add('pressed');
+            document.getElementById('liveIndicator').classList.add('on');
+            playBeep(true);
+            sendWS({ type: 'ptt-start' });
+
+            if (STATE.internetMode) {
+                toast(t().toastSpeaking);
+                try {
+                    const audioData = await recordAudio(30000);
+                    if (STATE.isPTT) {
+                        const m = { id: Date.now().toString(), type: 'voice', sender: STATE.userName, duration: '30',
+                            expiresAt: Date.now() + 3 * 60 * 1000, audioData };
+                        addMessage(m);
+                        sendWS({ type: 'voice-message', messageId: m.id, duration: '30', expiresAt: m.expiresAt, audioData });
+                    }
+                } catch (e) { toast(t().toastMicError); }
+            } else {
+                toast(t().toastRecording);
+                try {
+                    const audioData = await recordAudio(8000);
+                    const m = { id: Date.now().toString(), type: 'voice', sender: STATE.userName, duration: '8',
+                        expiresAt: Date.now() + 3 * 60 * 1000, audioData };
+                    addMessage(m);
+                    sendWS({ type: 'voice-message', messageId: m.id, duration: '8', expiresAt: m.expiresAt, audioData });
+                } catch (e) { toast(t().toastMicError); }
+            }
+            stopPTT();
+        }
+
+        function stopPTT() {
+            if (!STATE.isPTT) return;
+            STATE.isPTT = false;
+            STATE.channelBusy = false;
+            document.getElementById('pttBtn').classList.remove('pressed', 'locked');
+            document.getElementById('liveIndicator').classList.remove('on');
+            playBeep(false);
+            sendWS({ type: 'ptt-end' });
+            if (STATE.mediaRecorder && STATE.mediaRecorder.state === 'recording') STATE.mediaRecorder.stop();
+        }
+
+        function init() {
+            initSlideshow();
+            updateGreetings();
+            setInterval(() => {
+                const all = document.querySelectorAll('#greetingBox .greeting-word');
+                if (all.length > 0) {
+                    all[STATE.greetingIndex].classList.remove('show');
+                    STATE.greetingIndex = (STATE.greetingIndex + 1) % all.length;
+                    all[STATE.greetingIndex].classList.add('show');
+                }
+            }, 2000);
+
+            const ptt = document.getElementById('pttBtn');
+            ptt.addEventListener('pointerdown', (e) => { e.preventDefault();
+                startPTT(); });
+            ptt.addEventListener('pointerup', (e) => { e.preventDefault();
+                stopPTT(); });
+            ptt.addEventListener('pointerleave', (e) => { e.preventDefault();
+                stopPTT(); });
+            ptt.addEventListener('touchstart', (e) => { e.preventDefault();
+                startPTT(); });
+            ptt.addEventListener('touchend', (e) => { e.preventDefault();
+                stopPTT(); });
+
+            updateAllTexts();
+            updateInstallOverlay();
+        }
+
+        init();
+    </script>
+</body>
+</html>
